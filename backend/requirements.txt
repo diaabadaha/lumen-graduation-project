@@ -1,0 +1,63 @@
+# Lumen backend dependencies (Sprints 1-3)
+# Pin to known-good versions. Bump deliberately when needed.
+
+# --- Web framework + WebSocket ---------------------------------------------
+fastapi==0.115.4
+uvicorn[standard]==0.32.0
+websockets==13.1
+python-multipart==0.0.12
+
+# --- Vision pipeline -------------------------------------------------------
+Pillow==11.0.0
+numpy==2.1.3
+# Object detection (Sprint 3). ultralytics ships the YOLOv8 family; the
+# yolov8n.pt weights (~6 MB) auto-download from the ultralytics CDN on the
+# first inference call and are cached under ~/.config/Ultralytics (or
+# %APPDATA%\Ultralytics on Windows). ultralytics pulls in torch + torchvision
+# + opencv automatically; recent 8.3.x releases have Python 3.13 wheels for
+# all of them. Open lower bound so pip resolves a 3.13-compatible torch.
+ultralytics>=8.3.0
+# Hand pose detection (Sprint 5: Reach Guidance). MediaPipe Hands locates 21
+# landmarks per hand; we use the index fingertip and wrist for hand-to-target
+# spatial reasoning. 0.10.18+ ships Python 3.13 wheels. Models are bundled
+# in the wheel - no auto-download on first use.
+mediapipe>=0.10.18
+
+# --- Voice pipeline --------------------------------------------------------
+gTTS==2.5.4
+# faster-whisper instead of openai-whisper:
+#   - openai-whisper's setup.py uses `locals()` after exec(), which broke on
+#     Python 3.13 (PEP 667). Every version is affected.
+#   - faster-whisper ships pre-built wheels, uses the same Whisper models
+#     under the hood (downloaded from HuggingFace on first run), runs ~4x
+#     faster on CPU via CTranslate2, and doesn't pull in torch.
+# Open lower bound so pip picks the latest, which pulls in a recent PyAV
+# (>=13) that has Python 3.13 Windows wheels. The earlier 1.0.3 pin pulled
+# a too-old av that wouldn't wheel-install on 3.13.
+faster-whisper>=1.1.0
+# Belt-and-braces: explicitly require an av that has 3.13 wheels.
+# (We also use PyAV directly to decode PTT audio blobs in speech_service.py,
+# avoiding the need for a system-installed ffmpeg.exe on PATH.)
+av>=13.0.0
+
+# --- Command parsing -------------------------------------------------------
+rapidfuzz==3.10.1
+
+# --- Navigation (Sprint 4: goal-directed exploration) ----------------------
+# The navigation task loads YOLOv8m (auto-downloaded like yolov8n) plus the
+# custom door detector (best.pt, committed at the repo root) and the 4-class
+# door verifier (door_training/runs/.../best.pt, also committed). ultralytics
+# above covers all three. opencv is pulled in by ultralytics; listed here
+# because the navigation perception stack uses cv2 directly (Canny edge
+# gates, motion gating, resizing).
+opencv-python>=4.8
+# Floor-segmentation obstacle layer (SegFormer-B0). Optional at runtime - if
+# these fail to import, the obstacle watchdog degrades to YOLO named objects
+# only (see services/navigation/models.py) - but installed by default since
+# the demo targets a GPU box.
+torch>=2.0
+transformers>=4.40
+
+# --- Tests -----------------------------------------------------------------
+pytest==8.3.3
+pytest-asyncio==0.24.0

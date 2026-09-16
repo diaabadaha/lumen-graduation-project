@@ -1,81 +1,40 @@
 # Lumen
 
-**A task-oriented assistive-vision system that helps blind users find objects in their
-environment, navigate to landmarks, and reach for objects — using only a smartphone.**
+**A task-oriented assistive system that helps blind users find objects in their environment, navigate to landmarks, and reach for objects, using only a smartphone.**
 
 [![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/server-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
-[![YOLOv8](https://img.shields.io/badge/vision-YOLOv8-orange.svg)](https://docs.ultralytics.com/)
+[![YOLOv8n](https://img.shields.io/badge/vision-YOLOv8n-orange.svg)](https://docs.ultralytics.com/)
 [![MediaPipe](https://img.shields.io/badge/hands-MediaPipe-4285F4.svg)](https://developers.google.com/mediapipe)
 [![Whisper](https://img.shields.io/badge/STT-faster--whisper-7c3aed.svg)](https://github.com/SYSTRAN/faster-whisper)
-[![Door mAP@50](https://img.shields.io/badge/door%20detector%20mAP%4050-0.946-brightgreen.svg)](#the-trained-door-detector)
-[![Tests](https://img.shields.io/badge/tests-280%2B%20passing-brightgreen.svg)](#running-tests)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](#license)
 
-> Birzeit University — ENCS5200 Graduation Project — 2026.
+> Birzeit University - ENCS5200 Graduation Project - 2026.
 
 ---
 
 ## What is Lumen?
 
-A blind user opens a web page on their phone, points the camera at the room, and says
-**"find my cup."** Lumen answers in voice: *"Looking for your cup."* As they pan the
-camera, Lumen tracks the cup and calls out direction and distance ("to your left, a few
-steps away" → "straight ahead, close by" → "right in front of you, reach forward"),
-watches their other hand enter the frame, guides it ("move your hand to the right...
-almost there"), and announces the grasp when the fingertip lands on the cup.
+A blind user opens a web page on their phone, points the camera at the room, and says **"find my cup."** Lumen answers in voice: *"Looking for your cup."* As they pan the camera, Lumen tracks the cup, calls out direction and distance ("to your left, a few steps away" -> "straight ahead, close by" -> "right in front of you, reach forward"), watches their other hand enter the frame, guides it ("move your hand to the right... almost there"), and announces grasp when the fingertip lands on the cup.
 
-No special hardware. No app install. Just a phone browser, a WebSocket, and a Python
-backend doing the vision and speech work.
+No special hardware. No app install. Just a phone browser, a WebSocket, and a Python backend doing the vision and speech work.
 
 ## Highlights
 
-- **Voice in, voice out.** Push-to-talk recording, server-side faster-whisper for STT,
-  gTTS for synthesis. No screen interaction required.
-- **Three task families.** Find objects in a room, navigate room-to-room by exploring
-  door-by-door, and reach for an object within arm's reach.
-- **YOLOv8 + MediaPipe Hands.** Object detection and 21-landmark hand pose, both running
-  on CPU, ~5 FPS end-to-end.
-- **Custom-trained door detector — mAP@50 0.946.** Fills the one gap COCO leaves
-  (no door class); see [the door detector](#the-trained-door-detector).
-- **Per-class distance estimation.** A laptop at 40% of frame width is "near"; a cup at
-  18% is *also* near — same camera, correct guidance per object.
-- **Auto-grasp completion.** When the fingertip enters the target's box, the task ends
-  automatically and announces success.
-- **iOS-friendly audio.** Persistent primed `<audio>` element + Web Audio unlock so TTS
-  actually plays on iPhone Safari and Chrome.
-- **Phone-deployable in minutes.** Same-origin frontend + Cloudflare quick tunnel = a
-  real HTTPS URL the phone can hit, no certificates to manage.
-- **280+ tests** over the pure decision logic, running in under a second.
+- **Voice in, voice out.** Push-to-talk recording, server-side faster-whisper for STT, gTTS for synthesis. No screen interaction required.
+- **Three task families.** Find objects in a room, navigate to another room by exploring door-by-door, and reach for an object that's within arm's reach.
+- **YOLOv8n + MediaPipe Hands.** Object detection and 21-landmark hand pose, both running on CPU, ~5 FPS end-to-end.
+- **Per-class distance estimation.** "A laptop occupying 40% of frame width is near; the same image of a cup at 18% is also near" - same camera, correct guidance for each.
+- **Auto-grasp completion.** When the user's fingertip enters the target's bounding box, the task ends automatically and announces success.
+- **iOS-friendly audio.** Persistent primed `<audio>` element + Web Audio AudioContext unlock so TTS actually plays on iPhone Safari and Chrome.
+- **Phone-deployable in minutes.** Same-origin frontend + Cloudflare quick tunnel = real HTTPS URL the phone can hit, no certificates to manage.
 
----
+## Demo
 
-## The trained door detector
-
-The navigation task needs doorways as targets, but COCO has no `door` class — so a
-single-class detector was trained from scratch (transfer-learned from COCO weights).
-
-**Datasets:** DoorDetect (386 doors + 827 hard negatives) merged with DeepDoors2 (3,000
-images, masks converted to boxes) → **4,213 images, one `door` class, 3,371 / 842
-train-val split**.
-
-**Setup:** YOLOv8, imgsz 640, batch 8, AdamW, AMP; best checkpoint at epoch 39.
-
-| Metric | Value |
-|:--|:--:|
-| **mAP@50** | **0.946** |
-| **mAP@50-95** | **0.829** |
-| **Precision** | **0.968** |
-| **Recall** | **0.892** |
-
-The 0.97 precision (very few false doors) is helped by the hard-negative images;
-this comfortably clears the project's ≥0.60 mAP@50 target. Full write-up in
-[`docs/Door_Model_Training_Results.md`](docs/Door_Model_Training_Results.md).
-
-At runtime the door detector is one layer of a **three-stage funnel**: the trained
-detector → geometric gates (aspect ratio, edge density, frame-fill) → a 4-class
-DoorDetect verifier as a semantic second opinion (kills curtains and door↔fridge
-confusions).
+> Screenshots and a demo video will go here once recorded.
+>
+> ```
+> [ phone screenshot: search in progress ]   [ phone screenshot: reach guidance ]
+> ```
 
 ---
 
@@ -83,10 +42,9 @@ confusions).
 
 ### Requirements
 
-- Python 3.13 (3.11+ works; 3.13 is what's verified).
+- Python 3.13 (3.11+ works, 3.13 is what's verified).
 - A modern browser (tested: Chrome on Android, Safari on iOS, Chrome on desktop).
-- Optional but recommended for phone testing:
-  [`cloudflared`](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/).
+- Optional but recommended for phone testing: [`cloudflared`](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/).
 
 ### Run the backend
 
@@ -96,8 +54,8 @@ python -m venv .venv
 
 # Activate
 source .venv/Scripts/activate          # Git Bash on Windows
-source .venv/bin/activate               # macOS / Linux
-.\.venv\Scripts\Activate.ps1            # Windows PowerShell
+source .venv/bin/activate              # macOS / Linux
+.\.venv\Scripts\Activate.ps1           # Windows PowerShell
 
 pip install -r requirements.txt
 uvicorn main:app --host 127.0.0.1 --port 8000 --reload
@@ -105,30 +63,27 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 
 First request triggers a few one-time downloads:
 
-- Whisper `base` weights (~150 MB, HuggingFace, cached in `~/.cache/huggingface/`).
-- YOLOv8n weights (`yolov8n.pt`, ~6 MB, ultralytics CDN).
-- MediaPipe Hands models ship inside the pip wheel — no download.
-- First *navigation* task additionally pulls YOLOv8m (~50 MB) and SegFormer-B0 (~15 MB).
-  The custom door detector + verifier weights are committed (`best.pt`,
-  `door_training/runs/...`) — no download.
+- Whisper `base` weights (~150 MB, from HuggingFace, cached in `~/.cache/huggingface/`).
+- YOLOv8n weights (`yolov8n.pt`, ~6 MB, from the ultralytics CDN).
+- MediaPipe Hands models ship inside the pip wheel - no download.
+- First *navigation* task additionally pulls YOLOv8m (~50 MB, ultralytics CDN) and
+  SegFormer-B0 (~15 MB, HuggingFace). The custom door detector + verifier weights
+  are committed in the repo (`best.pt`, `door_training/runs/...`) - no download.
 
 ### Use it
 
-Open <http://localhost:8000> in any browser. The frontend is served by FastAPI itself,
-so the page and the WebSocket share a single origin. Press **Start**, hold **PTT**, say
-"find my cup."
+Open <http://localhost:8000> in any browser. The frontend is served by FastAPI itself, so the page and the WebSocket share a single origin. Press **Start**, hold **PTT**, say "find my cup."
 
 ### Phone-test it (Cloudflare Tunnel)
 
-Browsers require HTTPS for camera + microphone access except on `localhost`:
+Browsers require HTTPS for camera + microphone access except on `localhost`. Easiest path to a real HTTPS URL:
 
 ```bash
 # In a second terminal (keep uvicorn running)
 cloudflared tunnel --url http://localhost:8000
 ```
 
-Open the printed `https://<random>.trycloudflare.com` URL on your phone. No cert
-provisioning, no router config.
+Cloudflare prints a `https://<random>.trycloudflare.com` URL. Open it on your phone. That's it - no cert provisioning, no router config.
 
 ---
 
@@ -138,13 +93,10 @@ provisioning, no router config.
 | --- | --- |
 | "find my **cup**" / "where is my **bottle**" / "look for the **laptop**" | Start an Object Allocation task. |
 | "navigate to the **kitchen**" / "take me to the **bathroom**" | Start a Navigation task. |
-| "**got it**" / "found it" / "thanks" / "done" | Mark the current task complete, return to listening. |
-| "**stop**" / "cancel" / "never mind" | Abort the current task; the session stays alive. |
+| "**got it**" / "found it" / "thanks" / "done" | Mark the current task complete and return to listening. |
+| "**stop**" / "cancel" / "never mind" / "forget it" | Abort the current task. Session stays alive for the next command. |
 
-Object Allocation supports a curated set of COCO classes (cup, bottle, chair, couch, bed,
-dining table, toilet, tv, laptop, mouse, remote, keyboard, cell phone, microwave, oven,
-sink, refrigerator, book, clock, vase, scissors). Common mishearings ("phone" → "cell
-phone", "fridge" → "refrigerator") are normalised before fuzzy matching.
+Object Allocation supports a curated set of COCO classes (cup, bottle, chair, couch, bed, dining table, toilet, tv, laptop, mouse, remote, keyboard, cell phone, microwave, oven, sink, refrigerator, book, clock, vase, scissors). Common mishearings ("phone" -> "cell phone", "fridge" -> "refrigerator", "fone" -> "cell phone") are normalised before fuzzy matching.
 
 ---
 
@@ -153,7 +105,7 @@ phone", "fridge" → "refrigerator") are normalised before fuzzy matching.
 ```
 +---------------------+                +-----------------------------------+
 |  Browser (phone)    |    WebSocket   |  FastAPI backend                  |
-|                     |  <---------->  |  /ws (single connection per user) |
+|                     |  <----------> |  /ws (single connection per user) |
 |  - getUserMedia     |                |                                   |
 |  - MediaRecorder    |   JSON +       |  Router -> Session -> FSM         |
 |  - <audio> element  |   binary tags  |                                   |
@@ -169,13 +121,14 @@ phone", "fridge" → "refrigerator") are normalised before fuzzy matching.
 ```
 
 A single `/ws` connection carries JSON control messages and three tagged binary frames:
-`0x01` JPEG camera frame (client→server, 5 FPS), `0x02` WebM/Opus PTT audio (client→server,
-on PTT release), `0x03` MP3 TTS clip (server→client). See
-[`docs/protocol.md`](docs/protocol.md) for the frozen wire contract.
 
-The backend is a single uvicorn process. Each connected user gets a `Session` that owns
-its own FSM, latest decoded frame, task context, and detection-loop asyncio task. There
-is no shared task state across users.
+- `0x01` JPEG camera frame (client -> server, 5 FPS).
+- `0x02` WebM/Opus PTT audio blob (client -> server, on PTT release).
+- `0x03` MP3 TTS clip (server -> client).
+
+See [`docs/protocol.md`](docs/protocol.md) for the frozen wire contract.
+
+The backend is a single uvicorn process. Each connected user gets a `Session` that owns its own FSM, latest decoded frame, task context, and detection-loop asyncio task. There is no shared task state across users.
 
 ### Task FSM
 
@@ -193,49 +146,49 @@ is no shared task state across users.
             +---- task_complete <--- (active states) ----> back to LISTENING
 ```
 
-The FSM is authoritative — the client just renders whatever `fsm_state` the server pushes.
-Every transition is driven by an explicit event; the only autonomous transitions are
-`cleanup_done` and `task_complete` on grasp.
+The FSM is authoritative for task state - the client doesn't track its own state, it just renders whatever `fsm_state` the server pushes. Every transition is driven by an explicit event (user gesture, recognised command, completion, or cancellation); there are no autonomous transitions except `cleanup_done` (one tick after entering `ReturningToIdle`) and `task_complete` on grasp.
 
 ---
 
 ## Task families
 
-### Object Allocation — find a thing in the room
+### Object Allocation - find a thing in the room
 
-Per frame, 5 FPS:
+Pipeline per frame, 5 FPS:
 
-1. **Detect** the requested COCO class with YOLOv8n; drop boxes below 0.35 confidence.
-2. **Temporal filter** — the target must appear in 3 of the last 5 frames before it's
-   trusted. Kills single-frame flickers.
-3. **Spatial reasoning** — region (left / center / right, split at 0.35 / 0.65 of width)
-   and distance (near / medium / far) via `max(width_frac, height_frac)` against a
-   per-COCO-class threshold.
-4. **Speak** a throttled, region-aware phrase, re-announced only when the bucket changes
-   or 6 s elapse.
+1. **Detect** the requested COCO class with YOLOv8n. Drop boxes below 0.35 confidence.
+2. **Temporal filter** - the target must appear in 3 of the last 5 frames before we trust it. Kills single-frame flickers.
+3. **Spatial reasoning** - classify the target's region (left / center / right, split at 0.35 / 0.65 of frame width) and distance (near / medium / far) using `max(width_frac, height_frac)` against a per-COCO-class threshold. The per-class threshold means a laptop at 40% width is "near", a cup at 18% is also "near", and a phone at 12% is also "near" - same numeric area, three different right answers.
+4. **Speak** a throttled, region-aware phrase. "Found your cup, to your left" first time it's seen; "Your cup is straight ahead, a few steps away" when bucket changes; same phrase silenced until either bucket changes or 6 s elapse.
 
-Edge cases handled: periodic scan prompt if never seen in 30 s; one-shot "I lost sight of
-your cup" on loss; auto-abort at 60 s; multi-instance → guide to the most head-on one.
+Edge cases handled:
 
-### Reach Guidance — hand-relative cues
+- Never detected within 30 s: periodic scan prompt ("I don't see your cup yet, slowly turn around").
+- Seen, then lost from view for a full 5-frame window: one-shot "I lost sight of your cup, it was to your left" announcement.
+- Never detected within 60 s: auto-abort with "I couldn't find your cup."
+- Multiple instances visible at once: guide to the most head-on one (closest centre x to frame centre).
 
-When the target is at `near` distance AND MediaPipe detects a hand, the loop switches to
-hand-relative cues: `approach` ("move your hand to the right"), `almost` (fingertip within
-10% of the target centroid → "almost there, reach forward"), and `touching` (fingertip
-inside the box → "your hand is on the cup, grasp it"). The `touching` state is the **only
-autonomous success-exit** — it fires `task_complete` automatically. MediaPipe is only
-invoked near reach distance, saving CPU.
+### Reach Guidance - hand-relative cues
 
-### Navigation — goal-directed exploration
+When Object Allocation has the target at `near` distance AND MediaPipe detects a hand in frame, the loop switches to hand-relative cues:
 
-The user names only a destination and Lumen guides them there room-by-room. Per room:
-**scan** (compass-tracked 360°, detections bucketed into 30° sectors) → **arrive?**
-(rooms recognised by their objects, temporally accumulated) → **choose a door** (the
-three-stage funnel above) → **go** (bearing + step count from pinhole distance, with an
-obstacle watchdog fusing YOLO objects and SegFormer floor segmentation) → **cross**
-(door box saturates then vanishes *plus* sustained camera motion — the camera is the
-odometer). Runs at ~3 Hz. See
-[`docs/Exploration_Navigation_Design.md`](docs/Exploration_Navigation_Design.md).
+- `approach` state with a named direction: "Move your hand to the right / left", "Raise your hand up", "Lower your hand."
+- `almost` state when the fingertip is within 10% of the frame from the target's centroid: "Almost there. Reach forward."
+- `touching` state when the fingertip enters the target's bounding box: "Your hand is on the cup. Grasp it." This is the **only autonomous success-exit** in the system - it fires `task_complete` automatically. Every other path requires the user to say "got it."
+
+MediaPipe is only invoked when the tracker says we're in (or just left) reach distance - it stays idle the rest of the time, saving CPU.
+
+### Navigation - goal-directed exploration
+
+The user names only a destination ("navigate to the kitchen") and Lumen guides them there room-by-room, asking the user for direction only when perception is genuinely ambiguous. Per room:
+
+1. **Scan** - a compass-tracked guided 360° turn. Detections are bucketed into 30° sectors; door and indicator sightings are recorded with true bearings (camera heading + position in frame).
+2. **Arrive?** - rooms are recognised by their objects: ≥1 primary indicator (fridge/oven ⇒ kitchen, toilet ⇒ bathroom, bed ⇒ bedroom, ...) or ≥2 secondary ones, temporally accumulated so a single flicker never declares arrival. A directed re-confirmation ("turn that way, let's make sure") always precedes the announcement.
+3. **Choose a door** - doors come from a three-layer funnel: a custom-trained single-class door detector (mAP50 ~0.95), geometric gates (aspect ratio, edge density against blank walls, frame-fill), and a 4-class DoorDetect verifier as a semantic second opinion (kills curtains and door↔fridge confusions).
+4. **Go** - the spoken call-out gives bearing + step count (pinhole distance from the door's pixel height), then a path check. While walking, an **obstacle watchdog** fuses YOLO named objects in the walking lane with SegFormer floor segmentation (class-agnostic - catches clutter COCO has no word for) and preempts door guidance.
+5. **Cross** - doorway transit is detected from the door box saturating the frame, then disappearing, *plus* sustained camera motion (the camera is the odometer - detection flicker can never fake "you're through"). Then the next room's scan starts automatically.
+
+Runs as a per-session async loop (same pattern as Object Allocation) at ~3 Hz; a motion gate skips blurred frames while the phone pans and coaches the user to slow down. Without a compass (laptop, permission denied) the scan falls back to a single steady pass. See [`docs/Exploration_Navigation_Design.md`](docs/Exploration_Navigation_Design.md) for the design rationale and [`docs/Door_Model_Training_Results.md`](docs/Door_Model_Training_Results.md) for the door-model training.
 
 ---
 
@@ -245,27 +198,53 @@ odometer). Runs at ~3 Hz. See
 Lumen/
 ├── backend/                       # FastAPI server (single process)
 │   ├── main.py                    # /health, /ws, mounts ../frontend
-│   ├── api/                       # session, router, frame/audio handlers
-│   ├── fsm/task_fsm.py            # 5 states, explicit transitions only
+│   ├── requirements.txt
+│   ├── api/
+│   │   ├── session.py             # one Session per WS, owns FSM + state
+│   │   ├── router.py              # JSON + binary dispatch
+│   │   ├── frame_handler.py       # JPEG -> numpy
+│   │   └── audio_handler.py       # PTT blob -> STT -> parse -> FSM -> TTS
+│   ├── fsm/
+│   │   └── task_fsm.py            # 5 states, explicit transitions only
 │   ├── services/
-│   │   ├── speech_service.py      # faster-whisper + PyAV (no ffmpeg needed)
+│   │   ├── speech_service.py      # faster-whisper + PyAV (no ffmpeg required)
 │   │   ├── command_parser.py      # rapidfuzz intent extraction
 │   │   ├── tts_service.py         # gTTS + bounded LRU cache
-│   │   ├── yolo_service.py        # YOLOv8n via ultralytics
-│   │   ├── hand_service.py        # MediaPipe Hands landmark->pose
+│   │   ├── yolo_service.py        # YOLOv8n via ultralytics, pure parser
+│   │   ├── hand_service.py        # MediaPipe Hands, pure landmark->pose helper
 │   │   ├── spatial_reasoning.py   # per-class distance + region classifier
 │   │   ├── guidance_generator.py  # Object Allocation phrase templates
-│   │   ├── reach_guidance.py      # fingertip-vs-target logic + phrases
+│   │   ├── reach_guidance.py      # fingertip-vs-target spatial logic + phrases
 │   │   ├── object_allocation.py   # GuidanceTracker + 5 Hz async loop
-│   │   └── navigation/            # goal-directed exploration
-│   │       ├── engine.py / controller.py / perception.py / obstacles.py
-│   │       ├── geometry.py / goals.py / models.py / state.py / config.py
-│   └── tests/                     # 280+ pytest cases
+│   │   └── navigation/            # goal-directed exploration (Sprint 4)
+│   │       ├── engine.py          # per-session ~3 Hz async loop
+│   │       ├── controller.py      # discover/face/confirm/go_door state machine
+│   │       ├── perception.py      # 3-layer door funnel + COCO indicators
+│   │       ├── obstacles.py       # walking-lane watchdog (YOLO + floor seg)
+│   │       ├── geometry.py        # compass/bearing math
+│   │       ├── goals.py           # room -> indicator tables, goal resolution
+│   │       ├── models.py          # lazy YOLOv8m + door models + SegFormer
+│   │       ├── state.py           # per-session NavState
+│   │       └── config.py          # every tuning constant, in one place
+│   ├── tests/                     # 280+ pytest cases
+│   └── captured_audio/            # raw PTT WebM blobs for debugging (gitignored)
 ├── frontend/                      # Vanilla HTML + JS, no build step
-│   └── js/                        # app, ws_client, media, audio_queue, heading, wakelock
+│   ├── index.html
+│   ├── styles.css
+│   └── js/
+│       ├── app.js                 # button wiring + audio prime on Start gesture
+│       ├── ws_client.js
+│       ├── media.js               # getUserMedia + MediaRecorder + 5 FPS loop
+│       ├── audio_queue.js         # persistent primed <audio> for iOS
+│       ├── heading.js             # compass heading for the navigation scan
+│       └── wakelock.js
 ├── door_training/                 # door-model dataset prep + trained verifier
 ├── best.pt                        # custom single-class door detector (committed)
-├── docs/                          # protocol, navigation design, door results, plan
+├── docs/
+│   ├── protocol.md                # frozen WS contract
+│   ├── Exploration_Navigation_Design.md    # navigation design + rationale
+│   ├── Door_Model_Training_Results.md      # door detector training report
+│   └── ...                        # sprint plan + intro PDFs
 └── README.md
 ```
 
@@ -280,38 +259,39 @@ cd backend
 python -m pytest tests/ -q
 ```
 
-280+ tests cover FSM transitions, command parsing (50+ realistic transcriptions with
-mishearings and synonyms), spatial bucketing, guidance-phrase rendering, the
-reach-guidance state machine, hand-pose conversion, YOLO parsing, the Object Allocation
-tracker end-to-end (scripted frames + fake clock), and the navigation controller
-end-to-end plus its compass/bearing math. The suite mocks the heavy ML models, so it runs
-in under a second.
+280+ tests covering: FSM transitions, command parsing (50+ realistic transcriptions including mishearings and synonyms), spatial bucketing (per-class distance), guidance phrase rendering, reach-guidance state machine, hand-pose landmark conversion, YOLO detection parsing, the Object Allocation `GuidanceTracker` end-to-end with scripted frames and a fake clock, and the navigation exploration controller end-to-end (guided 360 scan → door choice → approach → doorway transit → next room → semantic arrival) plus its compass/bearing math and room-indicator arrival rules.
+
+The tests deliberately avoid loading the actual heavy ML models (YOLO weights, MediaPipe runtime) - they exercise the pure decision logic with mocks, so the suite runs in under a second.
 
 ### Tech stack
 
 | Layer | Choice | Why |
 | --- | --- | --- |
 | Server | FastAPI + uvicorn | Async WebSockets, fast iteration, type hints. |
-| STT | faster-whisper (`base`) | CTranslate2 backend; 4× faster CPU than openai-whisper; no torch dep. |
-| Audio decode | PyAV | Bundles FFmpeg in the wheel — no system `ffmpeg` on PATH. |
-| Object detection | YOLOv8n | Smallest of the family (~6 MB), CPU-friendly, COCO matches the noun list. |
+| STT | faster-whisper (`base`) | CTranslate2 backend; 4x faster CPU than openai-whisper; no torch dependency; Python 3.13 wheels. |
+| Audio decode | PyAV | Bundles FFmpeg shared libs in the wheel - no system `ffmpeg.exe` on PATH required. |
+| Object detection | YOLOv8n via ultralytics | Smallest of the family (~6 MB), CPU-friendly, COCO-pretrained matches our noun list. |
 | Hand pose | MediaPipe Hands | 21 landmarks, CPU realtime, models bundled in wheel. |
-| Navigation detection | YOLOv8m + custom door YOLOv8 ×2 | v8m for room indicators; trained single-class door detector + 4-class verifier. |
-| Obstacle floor check | SegFormer-B0 (ADE20K) | Per-pixel labels; walking lane must stay mostly floor. Degrades to YOLO-only. |
-| TTS | gTTS | Free; MP3s cached; latency masked by parallel detection. |
-| Command parsing | rapidfuzz | Tolerant of Whisper mishearings. |
-| Frontend | Vanilla HTML/JS, no build | One less moving part; served same-origin by the backend. |
+| Navigation detection | YOLOv8m + custom door YOLOv8s x2 | v8m for room indicators at angle/distance (GPU); a trained single-class door detector + 4-class verifier (weights committed). |
+| Obstacle floor check | SegFormer-B0 (ADE20K) | Labels every pixel; the walking lane must stay mostly floor. Optional - degrades to YOLO-only. |
+| TTS | gTTS | Free; we cache MP3s; latency masked by parallel detection. |
+| Command parsing | rapidfuzz | Tolerant of Whisper mishearings, structural matching of prefix + noun. |
+| Frontend | Vanilla HTML/JS, no build | One less moving part. Frontend served same-origin by the backend. |
+
+### Tunneling decisions
+
+Cloudflare Tunnel quick tunnels are the default recommendation in this README because they're free, no-account, and need no DNS. For an always-on host, the codebase is ready for Azure App Service (B1), a small Linux VM behind Caddy, Azure Container Apps, or Hugging Face Spaces - same backend, same frontend, same WebSocket URL derivation.
 
 ---
 
 ## Roadmap
 
-- [x] Sprint 1 — voice round-trip end-to-end (FSM + WS + STT + TTS).
-- [x] Sprint 2 — phone deployment over HTTPS (Cloudflare Tunnel + iOS audio unlock).
-- [x] Sprint 3 — Object Allocation with YOLOv8n.
-- [x] Sprint 4 — Navigation via goal-directed exploration (custom door model + room recognition + obstacle watchdog).
-- [x] Sprint 5 — Reach Guidance with MediaPipe Hands.
-- [ ] Sprint 6 — Blindfolded user trials, performance polish, final report.
+- [x] Sprint 1 - voice round-trip working end-to-end (FSM + WS + STT + TTS).
+- [x] Sprint 2 - phone deployment over HTTPS (Cloudflare Tunnel + iOS audio unlock).
+- [x] Sprint 3 - Object Allocation with YOLOv8n.
+- [x] Sprint 4 - Navigation via goal-directed exploration (custom door model + room recognition + obstacle watchdog).
+- [x] Sprint 5 - Reach Guidance with MediaPipe Hands.
+- [ ] Sprint 6 - Blindfolded user trials, performance polish, final report.
 
 See [`docs/Lumen_Implementation_Plan.pdf`](docs/Lumen_Implementation_Plan.pdf) for the full plan.
 
@@ -319,13 +299,10 @@ See [`docs/Lumen_Implementation_Plan.pdf`](docs/Lumen_Implementation_Plan.pdf) f
 
 ## Author
 
-- **Diaa Badaha** — 1210478 — Birzeit University, ENCS5200.
+**Ahmad Hamdan** - 1210241 - Birzeit University, ENCS5200.
 
-Developed as a graduation project at Birzeit University's Department of Electrical and
-Computer Engineering — covering the backend architecture, the vision and reach-guidance
-pipeline, and the exploration-navigation pipeline (door-model training, perception funnel,
-and exploration controller).
+Developed as a team graduation project at Birzeit University's Department of Electrical and Computer Engineering. Architecture, vision pipeline, and reach-guidance work by the author; the exploration-navigation pipeline (door model training, perception funnel, exploration controller) by team-mates, integrated into the backend architecture jointly.
 
 ## License
 
-Released under the MIT License. See [`LICENSE`](LICENSE).
+Academic project - released under the MIT License. See `LICENSE` (to be added) if you want to build on it.
